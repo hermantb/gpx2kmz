@@ -32,6 +32,7 @@
 #define	MKDIR(x)		mkdir (x, 0777)
 
 #include <expat.h>
+#include <utime.h>
 
 #include <libexif/exif-data.h>
 #include <libexif/exif-utils.h>
@@ -2793,6 +2794,7 @@ main (int argc, char **argv)
   time_t start;
   time_t end;
   char *command;
+  char *filename;
   char line[1000];
 
   time (&start);
@@ -3362,11 +3364,10 @@ main (int argc, char **argv)
 	fprintf (fo, "%.8f,%.8f,%.8f</coordinates></Point>\n", lon, lat, 0.0);
       }
       fprintf (fo, "  </Placemark>\n");
-      command =
+      filename =
 	str_concat (output, FILE_SEP_STR, "images", FILE_SEP_STR,
 		    pict[i].is_video == 0 ? cp : video, STR_END);
-      if (stat (command, &st) != 0) {
-	free (command);
+      if (stat (filename, &st) != 0) {
 	if (pict[i].is_video == 0) {
 	  line[0] = '\0';
 	  if (width) {
@@ -3376,9 +3377,9 @@ main (int argc, char **argv)
 	    sprintf (&line[strlen (line)], "x%d", height);
 	  }
 	  command =
-	    str_concat ("convert -strip -resize ", line, " -quality 50 ",
-			pict[i].name, " ", output, FILE_SEP_STR, "images",
-			FILE_SEP_STR, cp, STR_END);
+	    str_concat ("convert -strip -resize ", line,
+                        " -quality 50 -auto-orient ",
+			pict[i].name, " ", filename, STR_END);
 	}
 	else {
 	  int w = vwidth;
@@ -3408,15 +3409,22 @@ main (int argc, char **argv)
 		   "x=(w-text_w)-10:y=(h-text_h)-10\"", fs);
 	  command =
 	    str_concat ("ffmpeg -loglevel -8 -y -i ", pict[i].name, " -s ",
-			line, " -r ", rate, " ", timestamp, " ", output,
-			FILE_SEP_STR, "images", FILE_SEP_STR, video, STR_END);
+			line, " -r ", rate, " ", timestamp, " ",
+			filename, STR_END);
 	}
 	system (command);
 	free (command);
       }
-      else {
-	free (command);
+#if LINUX
+      if ((time_t) st.st_mtime != (time_t) pict[i].tim) {
+          struct utimbuf utim;
+
+          utim.actime = (time_t) pict[i].tim;
+          utim.modtime = (time_t) pict[i].tim;
+          utime (filename, &utim);
       }
+#endif
+      free (filename);
       free (lower);
       free (video);
     }
