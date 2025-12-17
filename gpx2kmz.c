@@ -2222,7 +2222,8 @@ load_pict (char *filename, unsigned int is_video)
     ExifLoader *l;
     ExifData *ed;
     ExifTag date_tags[] =
-      { EXIF_TAG_DATE_TIME_ORIGINAL, EXIF_TAG_DATE_TIME_DIGITIZED };
+      { EXIF_TAG_DATE_TIME_ORIGINAL, EXIF_TAG_DATE_TIME_DIGITIZED,
+        EXIF_TAG_DATE_TIME };
     ExifTag tags[] = { EXIF_TAG_MAKE, EXIF_TAG_MODEL, EXIF_TAG_EXPOSURE_TIME,
       EXIF_TAG_FNUMBER, EXIF_TAG_ISO_SPEED_RATINGS, EXIF_TAG_FLASH,
       EXIF_TAG_PIXEL_X_DIMENSION, EXIF_TAG_PIXEL_Y_DIMENSION,
@@ -3377,9 +3378,8 @@ main (int argc, char **argv)
 	    sprintf (&line[strlen (line)], "x%d", height);
 	  }
 	  command =
-	    str_concat ("convert -strip -resize ", line,
-                        " -quality 50 -auto-orient ",
-			pict[i].name, " ", filename, STR_END);
+	    str_concat ("magick ", pict[i].name, " -strip -resize ", line,
+                        " -quality 50 -auto-orient ", filename, STR_END);
 	}
 	else {
 	  int w = vwidth;
